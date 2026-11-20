@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Merge Sort Ranker with Undo & Copy</title>
+    <title>Merge Sort Ranker with Results Undo</title>
     <style>
         body {
             font-family: system-ui, -apple-system, sans-serif;
@@ -86,9 +86,12 @@
             background: #f9f9f9;
             border-radius: 8px;
             min-height: 120px;
+            transition: background-color 0.1s ease, transform 0.08s ease;
         }
-        button.choice-btn:hover {
+        button.choice-btn:hover,
+        button.choice-btn.key-active {
             background: #e2e8f0;
+            transform: scale(0.99);
         }
         button.choice-btn img {
             max-width: 100%;
@@ -97,7 +100,21 @@
             object-fit: cover;
         }
         .undo-bar {
-            margin-bottom: 20px;
+            margin: 18px 0 20px;
+        }
+        .shortcut-hint {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 8px;
+        }
+        kbd {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-family: inherit;
+            font-size: 0.8rem;
+            color: #334155;
         }
         .results-actions {
             display: flex;
@@ -160,11 +177,6 @@
         <button id="btn-right" class="choice-btn">Option B</button>
     </div>
 
-    <!-- Undo Controls -->
-    <div id="undo-area" class="undo-bar">
-        <button id="undo-btn" onclick="undoLastChoice()" disabled>↩ Undo Last Choice</button>
-    </div>
-
     <!-- Results Area -->
     <div id="results-area" class="hidden">
         <h2>Final Ranking</h2>
@@ -172,6 +184,14 @@
         <div class="results-actions">
             <button id="copy-btn" onclick="copyRanking()">📋 Copy Ranking</button>
             <button onclick="startSorting()">Sort Again</button>
+        </div>
+    </div>
+
+    <!-- Shared Undo Controls (Available during sorting AND on results screen) -->
+    <div id="undo-area" class="undo-bar">
+        <button id="undo-btn" onclick="undoLastChoice()" disabled>↩ Undo Last Choice</button>
+        <div id="shortcut-hint" class="shortcut-hint">
+            Shortcuts: <kbd>←</kbd> Left &nbsp;•&nbsp; <kbd>→</kbd> Right &nbsp;•&nbsp; <kbd>Z</kbd> or <kbd>Backspace</kbd> Undo
         </div>
     </div>
 
@@ -261,6 +281,7 @@
         const battleArea = document.getElementById('battle-area');
         const undoArea = document.getElementById('undo-area');
         const undoBtn = document.getElementById('undo-btn');
+        const shortcutHint = document.getElementById('shortcut-hint');
         const resultsArea = document.getElementById('results-area');
         const rankingList = document.getElementById('ranking-list');
         const copyBtn = document.getElementById('copy-btn');
@@ -516,6 +537,7 @@
             progressContainer.classList.remove('hidden');
             battleArea.classList.remove('hidden');
             undoArea.classList.remove('hidden');
+            shortcutHint.classList.remove('hidden');
             resultsArea.classList.add('hidden');
             undoBtn.disabled = choiceHistory.length === 0;
             updateProgressBar(false);
@@ -527,8 +549,11 @@
             latestRanking = finalRanking;
             updateProgressBar(true);
             battleArea.classList.add('hidden');
-            undoArea.classList.add('hidden');
             resultsArea.classList.remove('hidden');
+            // Keep undoArea visible on results so the user can step back from the final click
+            undoArea.classList.remove('hidden');
+            shortcutHint.classList.add('hidden');
+            undoBtn.disabled = choiceHistory.length === 0;
             statusText.textContent = `Done in ${comparisonsCount} comparisons!`;
 
             rankingList.innerHTML = '';
@@ -586,6 +611,41 @@
 
             runSortPass();
         }
+
+        // 12. KEYBOARD SHORTCUTS
+        function triggerButtonFeedback(btn) {
+            btn.classList.add('key-active');
+            setTimeout(() => btn.classList.remove('key-active'), 110);
+        }
+
+        document.addEventListener('keydown', (event) => {
+            const tag = document.activeElement?.tagName;
+            if (tag === 'TEXTAREA' || tag === 'INPUT') return;
+            if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+            const isBattleVisible = !battleArea.classList.contains('hidden');
+            const isResultsVisible = !resultsArea.classList.contains('hidden');
+
+            if (isBattleVisible) {
+                if (event.key === 'ArrowLeft') {
+                    event.preventDefault();
+                    triggerButtonFeedback(btnLeft);
+                    if (typeof btnLeft.onclick === 'function') btnLeft.onclick();
+                } else if (event.key === 'ArrowRight') {
+                    event.preventDefault();
+                    triggerButtonFeedback(btnRight);
+                    if (typeof btnRight.onclick === 'function') btnRight.onclick();
+                }
+            }
+
+            // Allow Undo via Z or Backspace both during active comparisons and on results
+            if ((isBattleVisible || isResultsVisible) && (event.key.toLowerCase() === 'z' || event.key === 'Backspace')) {
+                if (!undoBtn.disabled) {
+                    event.preventDefault();
+                    undoLastChoice();
+                }
+            }
+        });
 
         populateDropdown();
         startSorting();
