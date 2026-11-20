@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-List & Custom Merge Sort Ranker</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+        .controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        select, button {
+            padding: 8px 12px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        #custom-input-area {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #cbd5e1;
+        }
+        textarea {
+            width: 90%;
+            height: 120px;
+            padding: 10px;
+            font-family: inherit;
+            font-size: 1rem;
+            border: 1px solid #94a3b8;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .battle-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        button.choice-btn {
+            flex: 1;
+            padding: 30px 20px;
+            font-size: 1.2rem;
+            border: 2px solid #333;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        button.choice-btn:hover {
+            background: #e2e8f0;
+        }
+        ol {
+            text-align: left;
+            display: inline-block;
+            font-size: 1.2rem;
+            line-height: 1.8;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Rank Your Favorites</h1>
+
+    <!-- Category Selector & Custom Input -->
+    <div class="controls">
+        <label for="category-select"><strong>Choose a list:</strong></label>
+        <select id="category-select"></select>
+        <button id="reset-btn" onclick="startSorting()">Reset</button>
+
+        <!-- Hidden by default; appears when "Custom List..." is chosen -->
+        <div id="custom-input-area" class="hidden">
+            <textarea id="custom-items-text" placeholder="Enter your items here, one per line...&#10;Apple&#10;Banana&#10;Cherry"></textarea>
+            <br>
+            <button onclick="startSorting()">Start Ranking Custom List</button>
+        </div>
+    </div>
+
+    <p id="status">Which do you prefer?</p>
+
+    <!-- Comparison Area -->
+    <div id="battle-area" class="battle-container">
+        <button id="btn-left" class="choice-btn">Option A</button>
+        <button id="btn-right" class="choice-btn">Option B</button>
+    </div>
+
+    <!-- Results Area -->
+    <div id="results-area" class="hidden">
+        <h2>Final Ranking</h2>
+        <ol id="ranking-list"></ol>
+        <br>
+        <button onclick="startSorting()">Sort Again</button>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. ADD OR EDIT YOUR PRESET LISTS HERE
+        // ==========================================
+        const itemCategories = {
+            "Sci-Fi & Action Movies": [
+                "The Lord of the Rings",
+                "Star Wars",
+                "The Matrix",
+                "Inception",
+                "Interstellar",
+                "The Dark Knight"
+            ],
+            "Video Games": [
+                "The Legend of Zelda: Breath of the Wild",
+                "Elden Ring",
+                "Red Dead Redemption 2",
+                "Minecraft",
+                "Portal 2",
+                "The Witcher 3"
+            ],
+            "Fast Food Chains": [
+                "McDonald's",
+                "Chick-fil-A",
+                "Taco Bell",
+                "Wendy's",
+                "Culver's",
+                "In-N-Out"
+            ]
+        };
+
+        const CUSTOM_OPTION_VALUE = "__CUSTOM__";
+
+        // DOM Elements
+        const categorySelect = document.getElementById('category-select');
+        const customInputArea = document.getElementById('custom-input-area');
+        const customItemsText = document.getElementById('custom-items-text');
+        const resetBtn = document.getElementById('reset-btn');
+        const btnLeft = document.getElementById('btn-left');
+        const btnRight = document.getElementById('btn-right');
+        const battleArea = document.getElementById('battle-area');
+        const resultsArea = document.getElementById('results-area');
+        const rankingList = document.getElementById('ranking-list');
+        const statusText = document.getElementById('status');
+
+        let comparisonsCount = 0;
+        let currentSessionId = 0;
+
+        // 2. POPULATE DROPDOWN (PRESETS + CUSTOM OPTION)
+        function populateDropdown() {
+            const categoryNames = Object.keys(itemCategories);
+            categoryNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                categorySelect.appendChild(option);
+            });
+
+            // Add the "Custom List..." option at the bottom
+            const customOption = document.createElement('option');
+            customOption.value = CUSTOM_OPTION_VALUE;
+            customOption.textContent = "✏️ Custom List...";
+            categorySelect.appendChild(customOption);
+
+            // Handle dropdown changes
+            categorySelect.addEventListener('change', handleCategoryChange);
+        }
+
+        function handleCategoryChange() {
+            if (categorySelect.value === CUSTOM_OPTION_VALUE) {
+                // Cancel any active sort and show the text box
+                currentSessionId++;
+                customInputArea.classList.remove('hidden');
+                resetBtn.classList.add('hidden');
+                battleArea.classList.add('hidden');
+                resultsArea.classList.add('hidden');
+                statusText.textContent = "Enter at least 2 items above and click Start.";
+            } else {
+                // Hide text box and immediately sort the chosen preset
+                customInputArea.classList.add('hidden');
+                resetBtn.classList.remove('hidden');
+                startSorting();
+            }
+        }
+
+        // 3. PAUSABLE USER PROMPT
+        function askUserPreference(itemA, itemB, sessionId) {
+            return new Promise((resolve) => {
+                if (sessionId !== currentSessionId) return;
+
+                comparisonsCount++;
+                statusText.textContent = `Comparison #${comparisonsCount}: Which do you prefer?`;
+                
+                btnLeft.textContent = itemA;
+                btnRight.textContent = itemB;
+
+                btnLeft.onclick = () => resolve(-1);
+                btnRight.onclick = () => resolve(1);
+            });
+        }
+
+        // 4. ASYNCHRONOUS MERGE SORT ALGORITHM
+        async function interactiveMergeSort(array, sessionId) {
+            if (array.length <= 1) return array;
+
+            const middle = Math.floor(array.length / 2);
+            const leftHalf = array.slice(0, middle);
+            const rightHalf = array.slice(middle);
+
+            const sortedLeft = await interactiveMergeSort(leftHalf, sessionId);
+            const sortedRight = await interactiveMergeSort(rightHalf, sessionId);
+
+            return await merge(sortedLeft, sortedRight, sessionId);
+        }
+
+        // 5. MERGE FUNCTION
+        async function merge(left, right, sessionId) {
+            let result = [];
+            let leftIndex = 0;
+            let rightIndex = 0;
+
+            while (leftIndex < left.length && rightIndex < right.length) {
+                const choice = await askUserPreference(left[leftIndex], right[rightIndex], sessionId);
+                
+                if (sessionId !== currentSessionId) return [];
+
+                if (choice === -1) {
+                    result.push(left[leftIndex]);
+                    leftIndex++;
+                } else {
+                    result.push(right[rightIndex]);
+                    rightIndex++;
+                }
+            }
+
+            return result
+                .concat(left.slice(leftIndex))
+                .concat(right.slice(rightIndex));
+        }
+
+        // 6. INITIALIZE & DISPLAY RESULTS
+        async function startSorting() {
+            let itemsToRank = [];
+
+            // Determine whether to pull from the textarea or the preset object
+            if (categorySelect.value === CUSTOM_OPTION_VALUE) {
+                itemsToRank = customItemsText.value
+                    .split('\n')                   // Split by line breaks
+                    .map(item => item.trim())      // Remove extra spaces
+                    .filter(item => item !== '');  // Ignore blank lines
+
+                if (itemsToRank.length < 2) {
+                    alert("Please enter at least 2 items (one per line) to rank.");
+                    return;
+                }
+            } else {
+                itemsToRank = itemCategories[categorySelect.value];
+            }
+
+            currentSessionId++;
+            const thisSession = currentSessionId;
+
+            comparisonsCount = 0;
+            battleArea.classList.remove('hidden');
+            resultsArea.classList.add('hidden');
+
+            // Shuffle items
+            const shuffledItems = [...itemsToRank].sort(() => Math.random() - 0.5);
+
+            // Run the sort
+            const finalRanking = await interactiveMergeSort(shuffledItems, thisSession);
+
+            if (thisSession !== currentSessionId) return;
+
+            // Display results
+            battleArea.classList.add('hidden');
+            resultsArea.classList.remove('hidden');
+            statusText.textContent = `Done in ${comparisonsCount} comparisons!`;
+
+            rankingList.innerHTML = '';
+            finalRanking.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                rankingList.appendChild(li);
+            });
+        }
+
+        // Initialize app
+        populateDropdown();
+        startSorting();
+    </script>
+</body>
+</html>
