@@ -3,25 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Merge Sort Ranker with Results Undo</title>
+    <title>Merge Sort Ranker with Dark Mode</title>
     <style>
+        :root {
+            --bg-page: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --text-subtle: #64748b;
+            --panel-bg: #f1f5f9;
+            --panel-border: #cbd5e1;
+            --input-bg: #ffffff;
+            --input-border: #94a3b8;
+            --btn-bg: #ffffff;
+            --btn-hover: #e2e8f0;
+            --btn-border: #64748b;
+            --choice-bg: #f9f9f9;
+            --choice-hover: #e2e8f0;
+            --choice-border: #333333;
+            --progress-track: #e2e8f0;
+            --progress-fill: #2563eb;
+            --kbd-bg: #f1f5f9;
+            --kbd-border: #cbd5e1;
+            --kbd-text: #334155;
+        }
+
+        body.dark-mode {
+            --bg-page: #0f172a;
+            --text-main: #f8fafc;
+            --text-muted: #cbd5e1;
+            --text-subtle: #94a3b8;
+            --panel-bg: #1e293b;
+            --panel-border: #334155;
+            --input-bg: #0f172a;
+            --input-border: #475569;
+            --btn-bg: #1e293b;
+            --btn-hover: #334155;
+            --btn-border: #475569;
+            --choice-bg: #1e293b;
+            --choice-hover: #334155;
+            --choice-border: #94a3b8;
+            --progress-track: #334155;
+            --progress-fill: #3b82f6;
+            --kbd-bg: #1e293b;
+            --kbd-border: #475569;
+            --kbd-text: #e2e8f0;
+        }
+
         body {
             font-family: system-ui, -apple-system, sans-serif;
             max-width: 700px;
             margin: 50px auto;
             padding: 0 20px;
             text-align: center;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .header-row h1 {
+            margin: 0;
+            flex: 1;
+            text-align: center;
         }
         .controls {
             margin-bottom: 20px;
             padding: 15px;
-            background: #f1f5f9;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
             border-radius: 8px;
         }
         select, button {
             padding: 8px 12px;
             font-size: 1rem;
             cursor: pointer;
+            background-color: var(--btn-bg);
+            color: var(--text-main);
+            border: 1px solid var(--btn-border);
+            border-radius: 6px;
+        }
+        select {
+            background-color: var(--input-bg);
+        }
+        button:hover:not(:disabled) {
+            background-color: var(--btn-hover);
         }
         button:disabled {
             opacity: 0.45;
@@ -30,7 +100,7 @@
         #custom-input-area {
             margin-top: 15px;
             padding-top: 15px;
-            border-top: 1px solid #cbd5e1;
+            border-top: 1px solid var(--panel-border);
         }
         textarea {
             width: 90%;
@@ -38,7 +108,9 @@
             padding: 10px;
             font-family: inherit;
             font-size: 1rem;
-            border: 1px solid #94a3b8;
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--input-border);
             border-radius: 6px;
             margin-bottom: 10px;
         }
@@ -50,19 +122,19 @@
         .progress-track {
             width: 100%;
             height: 14px;
-            background-color: #e2e8f0;
+            background-color: var(--progress-track);
             border-radius: 999px;
             overflow: hidden;
         }
         .progress-fill {
             height: 100%;
             width: 0%;
-            background-color: #2563eb;
+            background-color: var(--progress-fill);
             transition: width 0.2s ease;
         }
         .progress-label {
             font-size: 0.9rem;
-            color: #475569;
+            color: var(--text-muted);
             margin-top: 6px;
         }
         /* Battle Buttons */
@@ -82,15 +154,16 @@
             padding: 24px 20px;
             font-size: 1.2rem;
             font-weight: 600;
-            border: 2px solid #333;
-            background: #f9f9f9;
+            border: 2px solid var(--choice-border);
+            background: var(--choice-bg);
+            color: var(--text-main);
             border-radius: 8px;
             min-height: 120px;
             transition: background-color 0.1s ease, transform 0.08s ease;
         }
         button.choice-btn:hover,
         button.choice-btn.key-active {
-            background: #e2e8f0;
+            background: var(--choice-hover);
             transform: scale(0.99);
         }
         button.choice-btn img {
@@ -104,17 +177,17 @@
         }
         .shortcut-hint {
             font-size: 0.85rem;
-            color: #64748b;
+            color: var(--text-subtle);
             margin-top: 8px;
         }
         kbd {
-            background: #f1f5f9;
-            border: 1px solid #cbd5e1;
+            background: var(--kbd-bg);
+            border: 1px solid var(--kbd-border);
             border-radius: 4px;
             padding: 1px 6px;
             font-family: inherit;
             font-size: 0.8rem;
-            color: #334155;
+            color: var(--kbd-text);
         }
         .results-actions {
             display: flex;
@@ -146,7 +219,10 @@
 </head>
 <body>
 
-    <h1>Rank Your Favorites</h1>
+    <div class="header-row">
+        <h1>Rank Your Favorites</h1>
+        <button id="dark-mode-btn" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+    </div>
 
     <!-- Category Selector & Custom Input -->
     <div class="controls">
@@ -269,6 +345,7 @@
         const CUSTOM_OPTION_VALUE = "__CUSTOM__";
 
         // DOM Elements
+        const darkModeBtn = document.getElementById('dark-mode-btn');
         const categorySelect = document.getElementById('category-select');
         const customInputArea = document.getElementById('custom-input-area');
         const customItemsText = document.getElementById('custom-items-text');
@@ -298,6 +375,38 @@
         let replayIndex = 0;
         let latestRanking = [];
         let copyFeedbackTimeout = null;
+
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            darkModeBtn.textContent = isDark ? "☀️ Light Mode" : "🌙 Dark Mode";
+            try {
+                localStorage.setItem('rankerDarkMode', isDark ? '1' : '0');
+            } catch (err) {
+                // Ignore storage errors in restricted contexts
+            }
+        }
+
+        function initDarkMode() {
+            let isDark = false;
+            try {
+                const saved = localStorage.getItem('rankerDarkMode');
+                if (saved !== null) {
+                    isDark = saved === '1';
+                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    isDark = true;
+                }
+            } catch (err) {
+                isDark = false;
+            }
+
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+                darkModeBtn.textContent = "☀️ Light Mode";
+            } else {
+                darkModeBtn.textContent = "🌙 Dark Mode";
+            }
+        }
 
         function normalizeItems(rawList) {
             return rawList.map(entry => {
@@ -550,7 +659,6 @@
             updateProgressBar(true);
             battleArea.classList.add('hidden');
             resultsArea.classList.remove('hidden');
-            // Keep undoArea visible on results so the user can step back from the final click
             undoArea.classList.remove('hidden');
             shortcutHint.classList.add('hidden');
             undoBtn.disabled = choiceHistory.length === 0;
@@ -638,7 +746,6 @@
                 }
             }
 
-            // Allow Undo via Z or Backspace both during active comparisons and on results
             if ((isBattleVisible || isResultsVisible) && (event.key.toLowerCase() === 'z' || event.key === 'Backspace')) {
                 if (!undoBtn.disabled) {
                     event.preventDefault();
@@ -647,6 +754,7 @@
             }
         });
 
+        initDarkMode();
         populateDropdown();
         startSorting();
     </script>
