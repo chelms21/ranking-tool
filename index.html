@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: system-ui, -apple-system, sans-serif;
-            max-width: 600px;
+            max-width: 700px;
             margin: 50px auto;
             padding: 0 20px;
             text-align: center;
@@ -70,20 +70,44 @@
         }
         button.choice-btn {
             flex: 1;
-            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 24px 20px;
             font-size: 1.2rem;
+            font-weight: 600;
             border: 2px solid #333;
             background: #f9f9f9;
             border-radius: 8px;
+            min-height: 120px;
         }
         button.choice-btn:hover {
             background: #e2e8f0;
+        }
+        button.choice-btn img {
+            max-width: 100%;
+            max-height: 220px;
+            border-radius: 6px;
+            object-fit: cover;
         }
         ol {
             text-align: left;
             display: inline-block;
             font-size: 1.2rem;
             line-height: 1.8;
+        }
+        .result-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .result-thumb {
+            width: 36px;
+            height: 52px;
+            object-fit: cover;
+            border-radius: 4px;
         }
         .hidden {
             display: none !important;
@@ -101,7 +125,7 @@
         <button id="reset-btn" onclick="startSorting()">Reset</button>
 
         <div id="custom-input-area" class="hidden">
-            <textarea id="custom-items-text" placeholder="Enter your items here, one per line...&#10;Apple&#10;Banana&#10;Cherry"></textarea>
+            <textarea id="custom-items-text" placeholder="Enter your items here, one per line...&#10;Optional: add an image URL after | (e.g. Iron Man | https://...)"></textarea>
             <br>
             <button onclick="startSorting()">Start Ranking Custom List</button>
         </div>
@@ -134,47 +158,48 @@
     <script>
         // ==========================================
         // 1. ADD OR EDIT YOUR PRESET LISTS HERE
+        // Supports plain strings OR { name, image } objects
         // ==========================================
         const itemCategories = {
             "All MCU Movies (2008–2026)": [
-                "Iron Man",
-                "The Incredible Hulk",
-                "Iron Man 2",
-                "Thor",
-                "Captain America: The First Avenger",
-                "The Avengers",
-                "Iron Man 3",
-                "Thor: The Dark World",
-                "Captain America: The Winter Soldier",
-                "Guardians of the Galaxy",
-                "Avengers: Age of Ultron",
-                "Ant-Man",
-                "Captain America: Civil War",
-                "Doctor Strange",
-                "Guardians of the Galaxy Vol. 2",
-                "Spider-Man: Homecoming",
-                "Thor: Ragnarok",
-                "Black Panther",
-                "Avengers: Infinity War",
-                "Ant-Man and the Wasp",
-                "Captain Marvel",
-                "Avengers: Endgame",
-                "Spider-Man: Far From Home",
-                "Black Widow",
-                "Shang-Chi and the Legend of the Ten Rings",
-                "Eternals",
-                "Spider-Man: No Way Home",
-                "Doctor Strange in the Multiverse of Madness",
-                "Thor: Love and Thunder",
-                "Black Panther: Wakanda Forever",
-                "Ant-Man and the Wasp: Quantumania",
-                "Guardians of the Galaxy Vol. 3",
-                "The Marvels",
-                "Deadpool & Wolverine",
-                "Captain America: Brave New World",
-                "Thunderbolts*",
-                "The Fantastic Four: First Steps",
-                "Spider-Man: Brand New Day"
+                { name: "Iron Man", image: "https://i.ebayimg.com/images/g/qA0AAOSwZItkaZE3/s-l1200.jpg" },
+                { name: "The Incredible Hulk", image: "https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcTZrI0Y4p3RygSGwX_x9QpaEPPjOHMQdp27zLOX1lt0FO7rFKSvDKEHvtW9dMjLhSd8_IvznjzQzfPjE0I" },
+                { name: "Iron Man 2", image: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcRGjvtVLf5va44rrBkFqe5hIQt2pHt0egMEWWEx3X32Qfk4zG1fsvEgQUfUroqpa4esA9Igj1mqEqHXbvw" },
+                { name: "Thor", image: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcR52NPN7_ur0C70TixbtcpkcDAEMjdGNl6aXTbsYU-2CZ6qHkgwjc6VP0v_Ezg0uVlnD1c7mgaDES-s4U4" },
+                { name: "Captain America: The First Avenger", image: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcSkB77lNfLzVvTCICa9Rci6OWqdvdH21WQnVJ2fbyTsrhLFn0I0IP2Oqhop61A7hUkVQop3baAB7bJQVSU" },
+                { name: "The Avengers", image: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcSR-xIpEaoIH5U4VJ2zxwNnILJL95WsrNL_NnqLO8uTuH9rwyljEFyRtdsJ4Lp54OMOR_68xX-4ih0AfoY" },
+                { name: "Iron Man 3", image: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcRnAt_MS9XZjHZ1ZHNkBHmRxo8UxUZD62YOzLzY05gPn9Be0AQiPsJbwpeRcG5bZhQdyp3FlnPNfd0quvs" },
+                { name: "Thor: The Dark World", image: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcRDDKjLuBi34QWA6sqpZ4dHhk1T67p153qzy8NzaOLnEIMWqoPW1r5sf_NpJi3YtXvbrtEg25xWr7z1Euo" },
+                { name: "Captain America: The Winter Soldier", image: "https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcQeDALJ3Q6qT27eRx0D0g2Skvigi06Ke-pcSWcWVzZ72CZIYBy6Zsm27HZCKrkHSgeXwj6HEX8nAsJ3nEY" },
+                { name: "Guardians of the Galaxy", image: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcQH5iZQLKfvv5xauXTBFTr8U3saBlexQPLqtq97_LaDQV1VkEGTBAyXmz9a7JW0MuM-iVG07RvRlye29Qk" },
+                { name: "Avengers: Age of Ultron", image: "https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcStdEJIF7Qqvhu0DVlDMVKU6LbbsjT-dNDzZEYs9EdHtkvtRNKYqLslG1QiQ-B7sJZF_HZMiDf6IL6J7_M" },
+                { name: "Ant-Man", image: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcSP2qnxY_Xo7kYc-Jdqmwe3F4QyQ9cdjG_7z-uRJQD9hM9gBO4WAVOFyuRRWZqAw1ESUVEstY5VbVSQwio" },
+                { name: "Captain America: Civil War", image: "https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcQ3DN_Ki0DsFHYa3o5jjm4d3ZPN4_bKPc36uoXGZPjUgUjvOIeaIoF6LBXhrIe6G560_o6DTyR1zo6bWFA" },
+                { name: "Doctor Strange", image: "https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcSUfa2b6zZ-dBEFh0Z4J5Oc4Jn2OXyWMDUthQ0bnGToEIZ2LW_yV-7ZxtlYq2SM2UpIrl926pAWpK3lgLQ" },
+                { name: "Guardians of the Galaxy Vol. 2", image: "https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcTqawMtSEydxaNw9mwFhgkdcdn621RdiFjO8LfM5DhLnDYSNSiGLKoG6XGTn873jnVq5FGMdgjeNwIWVek" },
+                { name: "Spider-Man: Homecoming", image: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcSX4fr1nJSEk4JEUwi95tnPyzfF5GSdSGlfQZZ2IHZKA9Mak49tpkMFt87Kz7tLZ4uYorV0WDNPM8wgP5c" },
+                { name: "Thor: Ragnarok", image: "https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcSs5UdRzfhGYrmJOQdgiROdizDRcaVZOdUMVoZkzwN4t11Yn-b0fDTVY4Nbc8OZH46D5GWKWaAqh3vo1pc" },
+                { name: "Black Panther", image: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcR-WR0-19ANRbItH-mdDujiia1cBiJtkVtzJR0t0xbsFX8tEIr1L8qbtl0ezuYCBaBxzcf0F5DAkDvgY-Y" },
+                { name: "Avengers: Infinity War", image: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcS2HFu04lP0XZryCI3kP4L9q6EmY1xzkvbws2-DowRRL-fsBR3RMGvHSrH1wZmyjp8MAYIRlYAVSYVU8Dg" },
+                { name: "Ant-Man and the Wasp", image: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcTV4OWtkWIksYTm3RL_QV3a_6I98IJC_0qWHgXIWYKFk2iU0XTuiaeHwrCzR-2_b-j9MvPU5VHsIJdqIwQ" },
+                { name: "Captain Marvel", image: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcQ8No44hewHbowwSJJLrpeR3D87uBCHWgQNe1WNNPWZTaZOUHjX15Q3JS_KDRdajG3y3E2mUHMMe_cEDnI" },
+                { name: "Avengers: Endgame", image: "https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcSCaMMVt2O1WwRmYmRrxmUahUI_XDNwoZAQtEBm_iHQ0h5ygcXupQBKIk6Qb0svCDPJlCeeDoD7wITg4E0" },
+                { name: "Spider-Man: Far From Home", image: "https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcQ6r-1p5cxrf4bK3FYtpAIpFnX7D43_5GE3n69OZxrJSx_5LsvqrQDTqAZOe4C5M77AtcvQiKTlWe4INZ4" },
+                { name: "Black Widow", image: "https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcRQlFAWlXiqnuNdAulXSiAK8gspxfHLyHimptYNW-kLnKJk7FSEKf0jJlf6aBJZkN_2VR-sHhB3oFuVNwE" },
+                { name: "Shang-Chi and the Legend of the Ten Rings", image: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcT2CY9W-FARM-KeiW_Kdd6YNTV4C46m7AL9F8Eg8FRU5gsz5eqSvHaa1a8u_A32EF7KPSGABOg9d5FUdlA" },
+                { name: "Eternals", image: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcQ3NI9kBYxdXeickAfzmGXfKJTxnOfdeZMmgaXnuVCIiRiZs3pPIKOptMeqT-4okG1kTuUCK9-KeAq51H0" },
+                { name: "Spider-Man: No Way Home", image: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcTEkxs9dFst4f-domxBZl-HJsqk0teHlOgVkppcLd0om1B9vKWDWLwMH_QCJJd0Xm10xK7wy8ZSKgJQcOU" },
+                { name: "Doctor Strange in the Multiverse of Madness", image: "https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcQ5yeN2FPM65zmByG_CuGAvkXyXPlUegjHFBt1hBVlNjNBbGJPK_5vG3OAsqIkexJrdMutVD5o14qh-2Jk" },
+                { name: "Thor: Love and Thunder", image: "https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcTnCetY23O01a9VosuWfFSm8BDbEA84XcquLSuATpLotRx0cvAqowWO9fdoqyTXc06s3ck5Xb4R7-_DKbw" },
+                { name: "Black Panther: Wakanda Forever", image: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcR-WR0-19ANRbItH-mdDujiia1cBiJtkVtzJR0t0xbsFX8tEIr1L8qbtl0ezuYCBaBxzcf0F5DAkDvgY-Y" },
+                { name: "Ant-Man and the Wasp: Quantumania", image: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcS7u4PVtNxFKjC5wqnROqs_G8QMA-PnLq4FmEgx7WwS64ADACm4U03p8i2WvgCS1Vs83ntaU8-8MjqXNZ4" },
+                { name: "Guardians of the Galaxy Vol. 3", image: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcRqdXHL_W-uQU2g0Z-bPuM3WJ0NKkF3Bksrmtc0HOKyxipi3-1DdrxsDiAvuBmyYBsaj3ODp_YnT-MxVy4" },
+                { name: "The Marvels", image: "https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcRX9pjgQTH2Em2RRtAxLzqiYoiOUd02uMV9M4xHXF3x6C7MoLqxH0H3TfkKKPNIZVfNSrvsPIH1xia4j0U" },
+                { name: "Deadpool & Wolverine", image: "https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcRP3ySxdZZGSdw6hjwZvNAIfaj5IXPr9doUjz2ImkiypHcbdr-Cl2uF_zJXaOMDCHbZTwvk71zF53nu1B8" },
+                { name: "Captain America: Brave New World", image: "https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcSI8DIQEInVRcOzFdol_LYw5sRzahk6e2KknuE4mEpyWXdIzvGGB6p2j8QgCvpatA5gHT9jVEt6UwGdJfU" },
+                { name: "Thunderbolts*", image: "https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcREdgz43RdLLtACtON9MgPvtUbwg8ujupt36T9yvVWaGQ_2d1856KOxqSt2PwVvs90lJI_u8CYwp54-tgs" },
+                { name: "The Fantastic Four: First Steps", image: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcQA7j-sDA7DLvOBuJg2gFGyX_9R7mECjombYCvPoXAgFaTtRWEjDZlHLhrqjjLCW7MRXV0P3PQaRRT499k" },
+                { name: "Spider-Man: Brand New Day", image: "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcTaf6VcGjwqZmpWqAJ8sB5csUeG-2nuL_csv-99CAZOlyHU6dXsO_jZQn3mqJuEvrLjw53xARrBtW_J3ZY" }
             ],
             "Sci-Fi & Action Movies": [
                 "The Lord of the Rings",
@@ -223,6 +248,33 @@
         let savedComparisons = 0;
         let maxPossibleComparisons = 0;
         let currentSessionId = 0;
+
+        // Normalize plain strings or { name, image } objects uniformly
+        function normalizeItems(rawList) {
+            return rawList.map(entry => {
+                if (typeof entry === 'string') {
+                    return { name: entry, image: null };
+                }
+                return { name: entry.name, image: entry.image || null };
+            });
+        }
+
+        // Render image + title inside a battle choice button
+        function renderChoiceButton(buttonEl, item) {
+            buttonEl.innerHTML = '';
+
+            if (item.image) {
+                const img = document.createElement('img');
+                img.src = item.image;
+                img.alt = item.name;
+                img.onerror = () => img.style.display = 'none';
+                buttonEl.appendChild(img);
+            }
+
+            const span = document.createElement('span');
+            span.textContent = item.name;
+            buttonEl.appendChild(span);
+        }
 
         // 2. CALCULATE WORST-CASE COMPARISONS FOR MERGE SORT
         function getMaxMergeSortComparisons(n) {
@@ -291,8 +343,8 @@
                 comparisonsCount++;
                 statusText.textContent = `Comparison #${comparisonsCount}: Which do you prefer?`;
                 
-                btnLeft.textContent = itemA;
-                btnRight.textContent = itemB;
+                renderChoiceButton(btnLeft, itemA);
+                renderChoiceButton(btnRight, itemB);
 
                 btnLeft.onclick = () => resolve(-1);
                 btnRight.onclick = () => resolve(1);
@@ -349,17 +401,25 @@
             let itemsToRank = [];
 
             if (categorySelect.value === CUSTOM_OPTION_VALUE) {
-                itemsToRank = customItemsText.value
+                const lines = customItemsText.value
                     .split('\n')
-                    .map(item => item.trim())
-                    .filter(item => item !== '');
+                    .map(line => line.trim())
+                    .filter(line => line !== '');
 
-                if (itemsToRank.length < 2) {
+                if (lines.length < 2) {
                     alert("Please enter at least 2 items (one per line) to rank.");
                     return;
                 }
+
+                itemsToRank = lines.map(line => {
+                    const parts = line.split('|');
+                    return {
+                        name: parts[0].trim(),
+                        image: parts[1] ? parts[1].trim() : null
+                    };
+                });
             } else {
-                itemsToRank = itemCategories[categorySelect.value];
+                itemsToRank = normalizeItems(itemCategories[categorySelect.value]);
             }
 
             currentSessionId++;
@@ -387,7 +447,23 @@
             rankingList.innerHTML = '';
             finalRanking.forEach(item => {
                 const li = document.createElement('li');
-                li.textContent = item;
+                const row = document.createElement('div');
+                row.className = 'result-item';
+
+                if (item.image) {
+                    const thumb = document.createElement('img');
+                    thumb.src = item.image;
+                    thumb.alt = item.name;
+                    thumb.className = 'result-thumb';
+                    thumb.onerror = () => thumb.style.display = 'none';
+                    row.appendChild(thumb);
+                }
+
+                const titleSpan = document.createElement('span');
+                titleSpan.textContent = item.name;
+                row.appendChild(titleSpan);
+
+                li.appendChild(row);
                 rankingList.appendChild(li);
             });
         }
